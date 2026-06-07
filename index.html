@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akbar Pratama — Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #e63946; --red2: #ff073a; --dark: #0a0a0f; --dark2: #111118;
+  --dark3: #1a1a26; --gray: #2a2a3a; --light: #c8c8d4; --white: #f0f0f8;
+  --gold: #ffd700;
+  --font-title: 'Cinzel Decorative', serif;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--dark); color: var(--light); font-family: var(--font-body); font-size: 17px; line-height: 1.7; overflow-x: hidden; cursor: none; }
+
+/* CURSOR */
+.cursor { position: fixed; width: 12px; height: 12px; background: var(--red2); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: screen; }
+.cursor-ring { position: fixed; width: 36px; height: 36px; border: 1.5px solid var(--red); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); mix-blend-mode: screen; transition: width 0.3s, height 0.3s; }
+
+/* SCANLINES */
+.scanlines { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px); opacity: 0.4; }
+
+/* PARTICLES */
+#particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* EDIT MODE TOGGLE */
+#edit-fab {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 500;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--red2); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: white;
+  box-shadow: 0 0 30px rgba(255,7,58,0.6);
+  transition: transform 0.3s, box-shadow 0.3s;
+  font-family: var(--font-body);
+}
+#edit-fab:hover { transform: scale(1.1); box-shadow: 0 0 50px rgba(255,7,58,0.9); }
+
+#edit-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: var(--red2); color: white; text-align: center;
+  padding: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem;
+  letter-spacing: 2px; display: none;
+  box-shadow: 0 2px 20px rgba(255,7,58,0.5);
+}
+body.edit-mode #edit-banner { display: block; }
+body.edit-mode { padding-top: 36px; }
+
+/* Editable fields */
+.editable {
+  outline: none; transition: background 0.2s, box-shadow 0.2s;
+  border-radius: 4px;
+}
+body.edit-mode .editable {
+  background: rgba(255,7,58,0.08);
+  box-shadow: 0 0 0 1.5px rgba(255,7,58,0.4);
+  cursor: text;
+}
+body.edit-mode .editable:hover { box-shadow: 0 0 0 2px var(--red2); }
+body.edit-mode .editable:focus { background: rgba(255,7,58,0.15); box-shadow: 0 0 0 2px var(--red2); }
+
+/* EDIT CONTROLS (add/delete buttons) */
+.edit-ctrl {
+  display: none; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem;
+}
+body.edit-mode .edit-ctrl { display: flex; }
+
+.edit-btn {
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1px;
+  padding: 5px 14px; border: 1px solid; cursor: pointer;
+  background: transparent; transition: all 0.2s; border-radius: 3px;
+  text-transform: uppercase;
+}
+.edit-btn.add { color: #4ade80; border-color: #4ade80; }
+.edit-btn.add:hover { background: rgba(74,222,128,0.15); }
+.edit-btn.del { color: var(--red2); border-color: var(--red2); }
+.edit-btn.del:hover { background: rgba(255,7,58,0.15); }
+.edit-btn.save-btn { color: var(--gold); border-color: var(--gold); }
+.edit-btn.save-btn:hover { background: rgba(255,215,0,0.15); }
+
+/* Image upload area */
+.img-upload-wrap { position: relative; }
+.img-overlay {
+  display: none; position: absolute; inset: 0;
+  background: rgba(255,7,58,0.7); align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.75rem; color: white;
+  letter-spacing: 1px; cursor: pointer; z-index: 10;
+  flex-direction: column; gap: 4px; text-align: center;
+}
+body.edit-mode .img-overlay { display: flex; }
+.img-overlay span:first-child { font-size: 1.5rem; }
+.img-input { display: none; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.2rem 3rem;
+  background: linear-gradient(to bottom, rgba(10,10,15,0.95), transparent);
+  backdrop-filter: blur(4px);
+}
+.nav-logo { font-family: var(--font-title); font-size: 1.1rem; color: var(--red2); letter-spacing: 2px; text-shadow: 0 0 20px var(--red2); text-decoration: none; }
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a { color: var(--light); text-decoration: none; font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; position: relative; padding-bottom: 4px; transition: color 0.3s; }
+.nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1.5px; background: var(--red2); transition: width 0.35s; box-shadow: 0 0 8px var(--red2); }
+.nav-links a:hover { color: var(--white); }
+.nav-links a:hover::after { width: 100%; }
+
+/* TRANSITION */
+.transition-overlay { position: fixed; inset: 0; z-index: 9000; background: var(--red2); clip-path: circle(0% at 50% 50%); pointer-events: none; transition: clip-path 0.55s cubic-bezier(0.77,0,0.175,1); }
+.transition-overlay.active { clip-path: circle(150% at 50% 50%); }
+
+section { min-height: 100vh; position: relative; z-index: 1; }
+
+/* HERO */
+#hero { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 8vw; background: radial-gradient(ellipse 80% 60% at 60% 50%, rgba(230,57,70,0.08) 0%, transparent 70%); }
+.hero-eyebrow { font-family: var(--font-mono); color: var(--red); font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1rem; animation: fadeSlideUp 0.8s 0.2s both; }
+.hero-title { font-family: var(--font-title); font-size: clamp(2.8rem, 7vw, 6.5rem); color: var(--white); line-height: 1.05; margin-bottom: 0.5rem; animation: fadeSlideUp 0.8s 0.4s both; }
+.hero-title .name-red { color: var(--red2); text-shadow: 0 0 40px rgba(255,7,58,0.6); }
+.hero-subtitle { font-family: var(--font-body); font-size: clamp(1rem, 2.5vw, 1.5rem); color: var(--light); opacity: 0.75; margin-bottom: 0.8rem; font-weight: 500; letter-spacing: 3px; animation: fadeSlideUp 0.8s 0.55s both; }
+.hero-desc { max-width: 520px; font-size: 1rem; color: var(--light); opacity: 0.6; margin-bottom: 2.5rem; animation: fadeSlideUp 0.8s 0.7s both; }
+.hero-btns { display: flex; gap: 1.2rem; flex-wrap: wrap; animation: fadeSlideUp 0.8s 0.85s both; }
+
+.btn { font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; padding: 0.85rem 2.2rem; border: none; cursor: pointer; text-decoration: none; display: inline-block; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.3s; }
+.btn-primary { background: var(--red2); color: var(--white); clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%); box-shadow: 0 0 30px rgba(255,7,58,0.5); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(255,7,58,0.8); }
+.btn-outline { background: transparent; color: var(--red2); border: 1.5px solid var(--red2); clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%); }
+.btn-outline:hover { background: rgba(255,7,58,0.1); transform: translateY(-2px); }
+
+.hero-deco { position: absolute; right: 6vw; top: 50%; transform: translateY(-50%); width: min(45vw, 520px); height: min(45vw, 520px); opacity: 0.12; animation: spin-slow 30s linear infinite, fadeIn 1.5s 0.5s both; pointer-events: none; }
+.corner-deco { position: absolute; width: 60px; height: 60px; border-color: var(--red); border-style: solid; opacity: 0.5; }
+.corner-deco.tl { top: 2rem; left: 2rem; border-width: 2px 0 0 2px; }
+.corner-deco.tr { top: 2rem; right: 2rem; border-width: 2px 2px 0 0; }
+.corner-deco.bl { bottom: 2rem; left: 2rem; border-width: 0 0 2px 2px; }
+.corner-deco.br { bottom: 2rem; right: 2rem; border-width: 0 2px 2px 0; }
+
+/* SECTION HEADER */
+.section-header { text-align: center; margin-bottom: 4rem; }
+.section-tag { font-family: var(--font-mono); color: var(--red); font-size: 0.8rem; letter-spacing: 5px; display: block; margin-bottom: 0.8rem; }
+.section-title { font-family: var(--font-title); font-size: clamp(1.8rem, 4vw, 3rem); color: var(--white); }
+.section-divider { width: 80px; height: 2px; background: linear-gradient(to right, transparent, var(--red2), transparent); margin: 1rem auto 0; box-shadow: 0 0 15px var(--red2); }
+
+/* ABOUT */
+#about { padding: 8rem 8vw; background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 100%); }
+.about-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 5rem; align-items: start; }
+.about-avatar { position: relative; }
+.avatar-frame {
+  width: 280px; height: 350px;
+  clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+  position: relative; overflow: hidden;
+  border: 1.5px solid rgba(230,57,70,0.4);
+  box-shadow: 0 0 60px rgba(230,57,70,0.15);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--dark3);
+}
+.avatar-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-initials { font-family: var(--font-title); font-size: 5rem; color: var(--red2); text-shadow: 0 0 40px rgba(255,7,58,0.6); }
+.avatar-glow { position: absolute; inset: 0; background: linear-gradient(135deg, transparent 60%, rgba(255,7,58,0.15)); pointer-events: none; }
+
+.about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 2rem; }
+.stat-box { background: var(--dark3); border: 1px solid rgba(230,57,70,0.2); padding: 1.2rem; text-align: center; clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%); transition: border-color 0.3s, box-shadow 0.3s; }
+.stat-box:hover { border-color: var(--red2); box-shadow: 0 0 20px rgba(255,7,58,0.2); }
+.stat-num { font-family: var(--font-title); font-size: 2rem; color: var(--red2); display: block; }
+.stat-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--light); opacity: 0.6; text-transform: uppercase; }
+
+.about-text h3 { font-family: var(--font-title); font-size: 1.6rem; color: var(--white); margin-bottom: 1.2rem; }
+.about-text p { color: var(--light); opacity: 0.75; margin-bottom: 1rem; line-height: 1.9; }
+.info-list { list-style: none; margin: 1.5rem 0; }
+.info-list li { display: flex; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.95rem; }
+.info-label { color: var(--red); font-weight: 700; letter-spacing: 1px; min-width: 120px; text-transform: uppercase; font-size: 0.8rem; }
+.info-val { color: var(--light); opacity: 0.85; }
+
+/* ACHIEVEMENTS / PRESTASI */
+#achievements { padding: 8rem 8vw; background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(230,57,70,0.04) 0%, transparent 70%); }
+#achievements-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.8rem; }
+
+.achievement-card {
+  background: var(--dark2); border: 1px solid rgba(230,57,70,0.2);
+  overflow: hidden; position: relative;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  transition: transform 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.achievement-card:hover { transform: translateY(-6px); border-color: var(--red2); box-shadow: 0 20px 60px rgba(255,7,58,0.15); }
+
+.achievement-img-wrap {
+  height: 180px; overflow: hidden; position: relative;
+  background: var(--dark3); display: flex; align-items: center; justify-content: center;
+}
+.achievement-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.achievement-img-placeholder { font-size: 3rem; opacity: 0.3; }
+.achievement-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, var(--dark2)); }
+
+.achievement-body { padding: 1.4rem; }
+.achievement-badge {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.65rem;
+  padding: 3px 10px; border: 1px solid var(--gold); color: var(--gold);
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.8rem;
+}
+.achievement-name { font-family: var(--font-title); font-size: 1rem; color: var(--white); margin-bottom: 0.5rem; line-height: 1.4; }
+.achievement-desc { font-size: 0.85rem; color: var(--light); opacity: 0.6; margin-bottom: 1rem; line-height: 1.6; }
+.achievement-link { font-family: var(--font-mono); font-size: 0.75rem; color: var(--red2); text-decoration: none; letter-spacing: 1px; border-bottom: 1px solid transparent; transition: border-color 0.2s; display: inline-block; }
+.achievement-link:hover { border-color: var(--red2); }
+.achievement-link:empty { display: none; }
+
+/* DELETE card button */
+.card-delete-btn {
+  display: none; position: absolute; top: 10px; right: 10px; z-index: 20;
+  background: rgba(255,7,58,0.85); border: none; color: white; font-size: 1rem;
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  align-items: center; justify-content: center; line-height: 1;
+}
+body.edit-mode .card-delete-btn { display: flex; }
+
+/* PROJECTS */
+#projects { padding: 8rem 8vw; background: var(--dark2); }
+#projects-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; }
+
+.project-card { background: var(--dark3); border: 1px solid rgba(230,57,70,0.15); overflow: hidden; position: relative; transition: transform 0.4s, box-shadow 0.4s; }
+.project-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 30px 80px rgba(255,7,58,0.2); border-color: rgba(230,57,70,0.5); }
+
+.project-thumb-wrap { height: 200px; overflow: hidden; position: relative; background: var(--dark2); display: flex; align-items: center; justify-content: center; }
+.project-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.project-thumb-emoji { font-size: 4rem; }
+.project-thumb-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, var(--dark3)); }
+
+.project-body { padding: 1.5rem; }
+.project-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.project-tag { font-family: var(--font-mono); font-size: 0.65rem; padding: 3px 10px; letter-spacing: 1px; border: 1px solid var(--red); color: var(--red); text-transform: uppercase; }
+.project-tags-input { font-family: var(--font-mono); font-size: 0.75rem; color: var(--light); background: transparent; border: none; outline: none; width: 100%; display: none; }
+body.edit-mode .project-tags { display: none; }
+body.edit-mode .project-tags-input { display: block; border-bottom: 1px solid rgba(255,7,58,0.3); padding: 4px 0; margin-bottom: 0.8rem; }
+
+.project-name { font-family: var(--font-title); font-size: 1.1rem; color: var(--white); margin-bottom: 0.6rem; }
+.project-desc { font-size: 0.88rem; color: var(--light); opacity: 0.65; line-height: 1.7; margin-bottom: 1.2rem; }
+.project-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+.project-link { font-family: var(--font-mono); font-size: 0.75rem; color: var(--red2); text-decoration: none; letter-spacing: 1px; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+.project-link:hover { border-color: var(--red2); }
+.project-link:empty { display: none; }
+
+/* CONTACT */
+#contact { padding: 8rem 8vw; text-align: center; background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(230,57,70,0.06) 0%, transparent 70%); }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 800px; margin: 3rem auto; }
+.contact-card { background: var(--dark2); border: 1px solid rgba(230,57,70,0.2); padding: 2rem 1.5rem; text-decoration: none; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); transition: all 0.3s; display: block; }
+.contact-card:hover { border-color: var(--red2); box-shadow: 0 0 40px rgba(255,7,58,0.2); transform: translateY(-4px); }
+.contact-icon { font-size: 2rem; margin-bottom: 0.8rem; display: block; }
+.contact-label { font-family: var(--font-mono); font-size: 0.75rem; color: var(--red2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.3rem; }
+.contact-val { font-size: 0.9rem; color: var(--light); opacity: 0.8; }
+
+footer { background: var(--dark2); border-top: 1px solid rgba(230,57,70,0.15); padding: 2rem 8vw; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; z-index: 1; position: relative; }
+.footer-brand { font-family: var(--font-title); color: var(--red2); font-size: 0.9rem; letter-spacing: 2px; }
+.footer-copy { font-family: var(--font-mono); font-size: 0.7rem; color: var(--light); opacity: 0.4; }
+
+/* ANIMATIONS */
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin-slow { to { transform: translateY(-50%) rotate(360deg); } }
+.reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; } .reveal-delay-2 { transition-delay: 0.2s; } .reveal-delay-3 { transition-delay: 0.3s; }
+
+@keyframes glitch1 { 0%,90%,100% { transform: translateX(0); opacity: 0; } 91% { transform: translateX(-4px); opacity: 0.7; } 93% { transform: translateX(0); opacity: 0; } }
+@keyframes glitch2 { 0%,93%,100% { transform: translateX(0); opacity: 0; } 94% { transform: translateX(4px); opacity: 0.7; } 96% { transform: translateX(0); opacity: 0; } }
+.glitch { position: relative; }
+.glitch::before { content: attr(data-text); position: absolute; inset: 0; color: #0ff; clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%); transform: translateX(-3px); animation: glitch1 3.5s infinite; font-family: inherit; font-size: inherit; font-weight: inherit; }
+.glitch::after { content: attr(data-text); position: absolute; inset: 0; color: #f0f; clip-path: polygon(0 55%, 100% 55%, 100% 75%, 0 75%); transform: translateX(3px); animation: glitch2 3.5s infinite; font-family: inherit; font-size: inherit; font-weight: inherit; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--red2); border-radius: 2px; }
+
+@media (max-width: 768px) {
+  nav { padding: 1rem 1.5rem; } .nav-links { gap: 1rem; } .nav-links a { font-size: 0.75rem; }
+  #hero { padding: 0 6vw; align-items: center; text-align: center; } .hero-deco { display: none; }
+  .about-grid { grid-template-columns: 1fr; gap: 2.5rem; text-align: center; }
+  .avatar-frame { margin: 0 auto; }
+  footer { flex-direction: column; text-align: center; }
+}
+
+/* thumb bg fallbacks */
+.thumb-1 { background: linear-gradient(135deg,#1a0a0a,#2d0e0e); }
+.thumb-2 { background: linear-gradient(135deg,#0a0a1a,#0e102d); }
+.thumb-3 { background: linear-gradient(135deg,#0a1a0a,#0e2d10); }
+.thumb-4 { background: linear-gradient(135deg,#1a0a15,#2d0e25); }
+
+/* SAVE TOAST */
+#save-toast {
+  position: fixed; bottom: 6rem; right: 2rem; z-index: 600;
+  background: #1a2a1a; border: 1px solid #4ade80; color: #4ade80;
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 1px;
+  padding: 0.8rem 1.4rem; border-radius: 4px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+}
+#save-toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<canvas id="particles"></canvas>
+<div class="scanlines"></div>
+<div class="transition-overlay" id="transOverlay"></div>
+<div id="edit-banner">✏️ MODE EDIT AKTIF — Klik teks untuk mengubah &nbsp;|&nbsp; Klik 💾 untuk simpan</div>
+<div id="save-toast">✓ PERUBAHAN TERSIMPAN</div>
+
+<!-- EDIT FAB -->
+<button id="edit-fab" title="Toggle Edit Mode">✏️</button>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#hero">AP</a>
+  <ul class="nav-links">
+    <li><a href="#about" data-nav>Tentang</a></li>
+    <li><a href="#achievements" data-nav>Prestasi</a></li>
+    <li><a href="#projects" data-nav>Project</a></li>
+    <li><a href="#contact" data-nav>Kontak</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="corner-deco tl"></div><div class="corner-deco tr"></div>
+  <div class="corner-deco bl"></div><div class="corner-deco br"></div>
+  <svg class="hero-deco" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="200" r="180" stroke="#e63946" stroke-width="1" stroke-dasharray="8 4"/>
+    <circle cx="200" cy="200" r="140" stroke="#e63946" stroke-width="0.5"/>
+    <circle cx="200" cy="200" r="100" stroke="#e63946" stroke-width="1.5" stroke-dasharray="4 8"/>
+    <polygon points="200,30 370,290 30,290" stroke="#e63946" stroke-width="1" fill="none" opacity="0.6"/>
+    <polygon points="200,370 30,110 370,110" stroke="#e63946" stroke-width="1" fill="none" opacity="0.6"/>
+    <circle cx="200" cy="200" r="20" stroke="#e63946" stroke-width="2" fill="rgba(230,57,70,0.1)"/>
+    <circle cx="200" cy="30" r="5" fill="#e63946"/><circle cx="200" cy="370" r="5" fill="#e63946"/>
+    <circle cx="30" cy="200" r="5" fill="#e63946"/><circle cx="370" cy="200" r="5" fill="#e63946"/>
+    <text x="200" y="207" text-anchor="middle" fill="#e63946" font-size="28" font-family="serif">⛧</text>
+  </svg>
+  <p class="hero-eyebrow">// Selamat Datang di Portfolio</p>
+  <h1 class="hero-title">
+    <span class="glitch name-red" data-text="Akbar">Akbar</span><br>Pratama
+  </h1>
+  <p class="hero-subtitle editable" contenteditable="false">// Mahasiswa &amp; Web Developer</p>
+  <p class="hero-desc editable" contenteditable="false">Membangun solusi digital dengan kode yang bersih, desain yang kuat, dan semangat tanpa batas. Siap membawa ide menjadi kenyataan.</p>
+  <div class="hero-btns">
+    <a href="#projects" class="btn btn-primary" data-nav>Lihat Project →</a>
+    <a href="#contact" class="btn btn-outline" data-nav>Hubungi Saya</a>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-header reveal">
+    <span class="section-tag">// 01 — Tentang Saya</span>
+    <h2 class="section-title">Siapa Saya?</h2>
+    <div class="section-divider"></div>
+  </div>
+  <div class="about-grid">
+    <div class="about-avatar reveal">
+      <div class="avatar-frame img-upload-wrap" id="avatar-wrap">
+        <div id="avatar-display">
+          <div class="avatar-initials" id="avatar-initials">AP</div>
+        </div>
+        <div class="avatar-glow"></div>
+        <div class="img-overlay" onclick="document.getElementById('avatar-input').click()">
+          <span>📷</span><span>GANTI FOTO</span>
+        </div>
+        <input type="file" class="img-input" id="avatar-input" accept="image/*">
+      </div>
+
+      <div class="about-stats">
+        <div class="stat-box"><span class="stat-num editable" contenteditable="false" data-count="2">2+</span><span class="stat-label editable" contenteditable="false">Tahun Belajar</span></div>
+        <div class="stat-box"><span class="stat-num editable" contenteditable="false" data-count="10">10+</span><span class="stat-label editable" contenteditable="false">Project Selesai</span></div>
+        <div class="stat-box"><span class="stat-num editable" contenteditable="false" data-count="5">5+</span><span class="stat-label editable" contenteditable="false">Teknologi</span></div>
+        <div class="stat-box"><span class="stat-num editable" contenteditable="false">100%</span><span class="stat-label editable" contenteditable="false">Semangat</span></div>
+      </div>
+    </div>
+
+    <div class="about-text reveal reveal-delay-2">
+      <h3 class="editable" contenteditable="false">Halo, Saya Akbar Pratama 👋</h3>
+      <p class="editable" contenteditable="false" id="about-p1">Saya adalah seorang mahasiswa yang passionate di bidang teknologi dan programming. Dengan jiwa yang selalu ingin belajar, saya terus mengasah kemampuan dalam membangun aplikasi web yang fungsional dan menarik.</p>
+      <p class="editable" contenteditable="false" id="about-p2">Perjalanan saya dimulai dari rasa penasaran yang mendalam terhadap bagaimana sebuah website bekerja. Sejak saat itu, saya tidak bisa berhenti belajar dan bereksperimen dengan berbagai teknologi.</p>
+
+      <ul class="info-list">
+        <li><span class="info-label">Nama</span><span class="info-val editable" contenteditable="false">Akbar Pratama</span></li>
+        <li><span class="info-label">Status</span><span class="info-val editable" contenteditable="false">Mahasiswa Aktif</span></li>
+        <li><span class="info-label">Kampus</span><span class="info-val editable" contenteditable="false">Universitas Kamu Di Sini</span></li>
+        <li><span class="info-label">Jurusan</span><span class="info-val editable" contenteditable="false">Teknik Informatika</span></li>
+        <li><span class="info-label">Lokasi</span><span class="info-val editable" contenteditable="false">Medan, Sumatera Utara</span></li>
+        <li><span class="info-label">Email</span><span class="info-val editable" contenteditable="false">akbar@email.com</span></li>
+        <li><span class="info-label">Status</span><span class="info-val editable" contenteditable="false" style="color:var(--red2)">● Open to Work / Freelance</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ACHIEVEMENTS / PRESTASI -->
+<section id="achievements">
+  <div class="section-header reveal">
+    <span class="section-tag">// 02 — Pencapaian</span>
+    <h2 class="section-title">Prestasi Saya</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <div id="achievements-list" class="reveal">
+    <!-- Card template akan dibuat oleh JS -->
+  </div>
+
+  <div class="edit-ctrl" style="justify-content:center; margin-top:2rem;">
+    <button class="edit-btn add" onclick="addAchievement()">+ Tambah Prestasi</button>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-header reveal">
+    <span class="section-tag">// 03 — Portofolio</span>
+    <h2 class="section-title">Project Saya</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <div id="projects-list" class="reveal">
+    <!-- Cards dibuat JS -->
+  </div>
+
+  <div class="edit-ctrl" style="justify-content:center; margin-top:2rem;">
+    <button class="edit-btn add" onclick="addProject()">+ Tambah Project</button>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-header reveal">
+    <span class="section-tag">// 04 — Kontak</span>
+    <h2 class="section-title">Hubungi Saya</h2>
+    <div class="section-divider"></div>
+    <p style="margin-top:1.5rem;color:var(--light);opacity:0.6;max-width:500px;margin-left:auto;margin-right:auto;" class="editable" contenteditable="false">Punya project, kolaborasi, atau pertanyaan? Jangan ragu untuk menghubungi saya!</p>
+  </div>
+  <div class="contact-grid reveal">
+    <a href="mailto:akbar@email.com" class="contact-card" id="contact-email">
+      <span class="contact-icon">📧</span>
+      <div class="contact-label">Email</div>
+      <div class="contact-val editable" contenteditable="false">akbar@email.com</div>
+    </a>
+    <a href="https://github.com/" target="_blank" class="contact-card" id="contact-github">
+      <span class="contact-icon">🐙</span>
+      <div class="contact-label">GitHub</div>
+      <div class="contact-val editable" contenteditable="false">@username</div>
+    </a>
+    <a href="https://linkedin.com/" target="_blank" class="contact-card" id="contact-linkedin">
+      <span class="contact-icon">💼</span>
+      <div class="contact-label">LinkedIn</div>
+      <div class="contact-val editable" contenteditable="false">Akbar Pratama</div>
+    </a>
+    <a href="https://instagram.com/" target="_blank" class="contact-card" id="contact-ig">
+      <span class="contact-icon">📸</span>
+      <div class="contact-label">Instagram</div>
+      <div class="contact-val editable" contenteditable="false">@username</div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <span class="footer-brand">AKBAR PRATAMA</span>
+  <span class="footer-copy editable" contenteditable="false">© 2025 Akbar Pratama — Built with 🔥 &amp; Code</span>
+</footer>
+
+<script>
+// ===================== DATA =====================
+let data = {
+  achievements: [
+    { id: 1, badge: "Juara", name: "Juara 1 Lomba Web Design", desc: "Meraih juara pertama dalam kompetisi web design tingkat universitas.", link: "", img: "" },
+    { id: 2, badge: "Sertifikat", name: "Sertifikasi Python Programming", desc: "Menyelesaikan kursus Python dan lulus sertifikasi dari platform online.", link: "https://example.com", img: "" },
+    { id: 3, badge: "Organisasi", name: "Ketua Divisi IT HMJ", desc: "Memimpin divisi teknologi informasi di organisasi mahasiswa jurusan.", link: "", img: "" }
+  ],
+  projects: [
+    { id: 1, emoji: "🛒", name: "Web E-Commerce", tags: "HTML, CSS, JavaScript", desc: "Website toko online dengan fitur katalog produk, keranjang belanja, dan tampilan responsif.", demo: "#", github: "#", img: "" },
+    { id: 2, emoji: "📊", name: "Sistem Manajemen Data", tags: "Python, SQL", desc: "Aplikasi CRUD untuk mengelola data mahasiswa dengan database MySQL.", demo: "", github: "#", img: "" },
+    { id: 3, emoji: "🎮", name: "Mini Game Browser", tags: "JavaScript, Canvas", desc: "Game sederhana berbasis browser menggunakan Canvas API dengan sistem skor.", demo: "#", github: "#", img: "" }
+  ]
+};
+
+// Load dari localStorage jika ada
+function loadData() {
+  const saved = localStorage.getItem('portfolio-data');
+  if (saved) { try { data = JSON.parse(saved); } catch(e) {} }
+  const savedAvatar = localStorage.getItem('portfolio-avatar');
+  if (savedAvatar) {
+    const wrap = document.getElementById('avatar-display');
+    wrap.innerHTML = '<img src="' + savedAvatar + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">';
+  }
+}
+function saveData() {
+  localStorage.setItem('portfolio-data', JSON.stringify(data));
+  showToast();
+}
+
+// ===================== RENDER =====================
+function renderAchievements() {
+  const list = document.getElementById('achievements-list');
+  list.innerHTML = '';
+  data.achievements.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'achievement-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <button class="card-delete-btn" onclick="deleteAchievement(${a.id})" title="Hapus">✕</button>
+      <div class="achievement-img-wrap img-upload-wrap">
+        ${a.img ? '<img src="'+a.img+'" alt="">' : '<div class="achievement-img-placeholder">🏆</div>'}
+        <div class="img-overlay" onclick="triggerImgUpload('ach','${a.id}')">
+          <span>📷</span><span>GANTI GAMBAR</span>
+        </div>
+        <input type="file" class="img-input" id="ach-img-${a.id}" accept="image/*" onchange="handleImgUpload(event,'ach','${a.id}')">
+      </div>
+      <div class="achievement-body">
+        <div class="achievement-badge editable" contenteditable="false" data-field="badge" data-id="${a.id}" data-type="ach">${a.badge}</div>
+        <div class="achievement-name editable" contenteditable="false" data-field="name" data-id="${a.id}" data-type="ach">${a.name}</div>
+        <div class="achievement-desc editable" contenteditable="false" data-field="desc" data-id="${a.id}" data-type="ach">${a.desc}</div>
+        <a href="${a.link||'#'}" class="achievement-link editable" contenteditable="false" data-field="link" data-id="${a.id}" data-type="ach" target="_blank">${a.link||''}</a>
+        <div class="edit-ctrl"><span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--light);opacity:0.5;">Link sertifikat/bukti ↑</span></div>
+      </div>`;
+    list.appendChild(card);
+    applyEditMode(card);
+  });
+}
+
+function renderProjects() {
+  const list = document.getElementById('projects-list');
+  list.innerHTML = '';
+  const thumbs = ['thumb-1','thumb-2','thumb-3','thumb-4'];
+  data.projects.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.dataset.id = p.id;
+    const tagsHtml = (p.tags||'').split(',').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="project-tag">${t}</span>`).join('');
+    card.innerHTML = `
+      <button class="card-delete-btn" onclick="deleteProject(${p.id})" title="Hapus">✕</button>
+      <div class="project-thumb-wrap ${thumbs[idx%4]} img-upload-wrap">
+        ${p.img ? '<img src="'+p.img+'" alt="">' : '<div class="project-thumb-emoji">'+p.emoji+'</div>'}
+        <div class="img-overlay" onclick="triggerImgUpload('proj','${p.id}')">
+          <span>📷</span><span>GANTI GAMBAR</span>
+        </div>
+        <input type="file" class="img-input" id="proj-img-${p.id}" accept="image/*" onchange="handleImgUpload(event,'proj','${p.id}')">
+      </div>
+      <div class="project-body">
+        <div class="project-tags">${tagsHtml}</div>
+        <input class="project-tags-input" placeholder="Tag teknologi (pisah koma): HTML, CSS, JS" value="${p.tags||''}" data-field="tags" data-id="${p.id}" data-type="proj">
+        <div class="project-name editable" contenteditable="false" data-field="name" data-id="${p.id}" data-type="proj">${p.name}</div>
+        <div class="project-desc editable" contenteditable="false" data-field="desc" data-id="${p.id}" data-type="proj">${p.desc}</div>
+        <div class="project-links">
+          <a href="${p.demo||'#'}" class="project-link editable" contenteditable="false" data-field="demo" data-id="${p.id}" data-type="proj" target="_blank">${p.demo ? '→ Live Demo' : ''}</a>
+          <a href="${p.github||'#'}" class="project-link editable" contenteditable="false" data-field="github" data-id="${p.id}" data-type="proj" target="_blank">${p.github ? '→ GitHub' : ''}</a>
+        </div>
+        <div class="edit-ctrl" style="margin-top:0.5rem;"><span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--light);opacity:0.5;">Link demo & github ↑ (isi URL)</span></div>
+      </div>`;
+    list.appendChild(card);
+    applyEditMode(card);
+    // tags input handler
+    card.querySelector('.project-tags-input').addEventListener('input', function() {
+      const proj = data.projects.find(x=>x.id==this.dataset.id);
+      if (proj) { proj.tags = this.value; }
+    });
+  });
+}
+
+// ===================== EDIT MODE =====================
+let editMode = false;
+
+function applyEditMode(root) {
+  root = root || document;
+  root.querySelectorAll('.editable').forEach(el => {
+    el.contentEditable = editMode ? 'true' : 'false';
+  });
+}
+
+function toggleEdit() {
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  document.querySelectorAll('.editable').forEach(el => {
+    el.contentEditable = editMode ? 'true' : 'false';
+  });
+  document.getElementById('edit-fab').textContent = editMode ? '💾' : '✏️';
+  document.getElementById('edit-fab').title = editMode ? 'Simpan Perubahan' : 'Edit Portfolio';
+  if (!editMode) {
+    // Collect data from editable fields in dynamic cards
+    document.querySelectorAll('[data-field][data-type="ach"]').forEach(el => {
+      const id = parseInt(el.dataset.id);
+      const field = el.dataset.field;
+      const item = data.achievements.find(x=>x.id===id);
+      if (item) item[field] = el.textContent.trim();
+    });
+    document.querySelectorAll('[data-field][data-type="proj"]').forEach(el => {
+      const id = parseInt(el.dataset.id);
+      const field = el.dataset.field;
+      const item = data.projects.find(x=>x.id===id);
+      if (item) item[field] = el.textContent.trim();
+    });
+    document.querySelectorAll('.project-tags-input').forEach(el => {
+      const id = parseInt(el.dataset.id);
+      const item = data.projects.find(x=>x.id===id);
+      if (item) item.tags = el.value;
+    });
+    saveData();
+    renderAchievements();
+    renderProjects();
+  }
+}
+
+document.getElementById('edit-fab').addEventListener('click', toggleEdit);
+
+// ===================== ADD / DELETE =====================
+function addAchievement() {
+  const newId = Date.now();
+  data.achievements.push({ id: newId, badge: "Kategori", name: "Nama Prestasi", desc: "Deskripsi prestasi kamu di sini.", link: "", img: "" });
+  renderAchievements();
+  applyEditMode();
+  saveData();
+}
+function deleteAchievement(id) {
+  if (!confirm('Hapus prestasi ini?')) return;
+  data.achievements = data.achievements.filter(a => a.id !== id);
+  renderAchievements();
+  saveData();
+}
+function addProject() {
+  const newId = Date.now();
+  data.projects.push({ id: newId, emoji: "💡", name: "Nama Project", tags: "Teknologi", desc: "Deskripsi project kamu.", demo: "", github: "", img: "" });
+  renderProjects();
+  applyEditMode();
+  saveData();
+}
+function deleteProject(id) {
+  if (!confirm('Hapus project ini?')) return;
+  data.projects = data.projects.filter(p => p.id !== id);
+  renderProjects();
+  saveData();
+}
+
+// ===================== IMAGE UPLOAD =====================
+function triggerImgUpload(type, id) {
+  if (!editMode) return;
+  document.getElementById(type+'-img-'+id).click();
+}
+function handleImgUpload(event, type, id) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const src = e.target.result;
+    if (type === 'ach') {
+      const item = data.achievements.find(x=>x.id==id);
+      if (item) { item.img = src; renderAchievements(); applyEditMode(); saveData(); }
+    } else {
+      const item = data.projects.find(x=>x.id==id);
+      if (item) { item.img = src; renderProjects(); applyEditMode(); saveData(); }
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// Avatar upload
+document.getElementById('avatar-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const src = ev.target.result;
+    document.getElementById('avatar-display').innerHTML = '<img src="'+src+'" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">';
+    localStorage.setItem('portfolio-avatar', src);
+    showToast();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ===================== TOAST =====================
+function showToast() {
+  const t = document.getElementById('save-toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== CURSOR =====================
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function loop(){
+  rx+=(mx-rx)*0.14; ry+=(my-ry)*0.14;
+  cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(loop);
+})();
+
+// ===================== PARTICLES =====================
+const canvas=document.getElementById('particles');
+const ctx=canvas.getContext('2d');
+let W,H,particles=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize(); window.addEventListener('resize',resize);
+class Particle{
+  constructor(){this.reset();}
+  reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-0.5)*0.4;this.vy=(Math.random()-0.5)*0.4-0.2;this.size=Math.random()*1.5+0.3;this.alpha=Math.random()*0.5+0.1;this.color=Math.random()>0.7?'#e63946':'#c8c8d4';}
+  update(){this.x+=this.vx;this.y+=this.vy;this.alpha-=0.0008;if(this.alpha<=0||this.x<0||this.x>W||this.y<0||this.y>H)this.reset();}
+  draw(){ctx.globalAlpha=this.alpha;ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}
+}
+for(let i=0;i<120;i++)particles.push(new Particle());
+function drawConns(){
+  for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+    const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<100){ctx.globalAlpha=(1-d/100)*0.06;ctx.strokeStyle='#e63946';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.stroke();}
+  }
+}
+(function animP(){ctx.clearRect(0,0,W,H);particles.forEach(p=>{p.update();p.draw();});drawConns();requestAnimationFrame(animP);})();
+
+// ===================== PAGE TRANSITION =====================
+const overlay=document.getElementById('transOverlay');
+document.querySelectorAll('[data-nav]').forEach(el=>{
+  el.addEventListener('click',e=>{
+    e.preventDefault();
+    const href=el.getAttribute('href');
+    overlay.style.transition='clip-path 0.55s cubic-bezier(0.77,0,0.175,1)';
+    overlay.style.clipPath='circle(150% at 50% 50%)';
+    setTimeout(()=>{
+      const target=document.querySelector(href);
+      if(target)target.scrollIntoView({behavior:'smooth'});
+      setTimeout(()=>{
+        overlay.style.transition='clip-path 0.55s cubic-bezier(0.77,0,0.175,1)';
+        overlay.style.clipPath='circle(0% at 50% 50%)';
+      },100);
+    },400);
+  });
+});
+
+// ===================== SCROLL REVEAL =====================
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+// ===================== INIT =====================
+loadData();
+renderAchievements();
+renderProjects();
+</script>
+</body>
+</html>
